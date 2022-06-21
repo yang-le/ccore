@@ -1,0 +1,6 @@
+*.o
+*.bin
+*.img
+*.map
+ccore
+.vscode
