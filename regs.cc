@@ -18,7 +18,7 @@
 void initregs(biosregs& reg)
 {
 	memset(&reg, 0, sizeof(reg));
-	reg.eflags |= 1;
+	reg.eflags |= X86_EFLAGS_CF;
 	reg.ds = ds();
 	reg.es = ds();
 	reg.fs = fs();

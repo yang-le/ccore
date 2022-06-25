@@ -40,7 +40,24 @@ load_main:
     jmp load_main
 
 load_ok:
+
+# Zero the bss
+	movw	$__bss_start, %di
+	movw	$_end+3, %cx
+	xorl	%eax, %eax
+	subw	%di, %cx
+	shrw	$2, %cx
+	rep; stosl
+
+# Jump to C code (should not return)
     calll   main
+
+    .global die
+    .type   die, @function
+die:
+    hlt
+    jmp die
+    .size   die, . - die
 
     .section ".bsdata", "a"
 loading_msg:

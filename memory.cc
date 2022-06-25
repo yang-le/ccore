@@ -23,7 +23,7 @@ static void detect_memory_e820(void)
         intcall(0x15, &ireg, &oreg);
 		ireg.ebx = oreg.ebx; /* for next iteration... */
 
-        if (oreg.eflags & 1)
+        if (oreg.eflags & X86_EFLAGS_CF)
             break;
         
         if (oreg.eax != SMAP) {

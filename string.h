@@ -1,6 +1,9 @@
 #pragma once
 
-#include "types.h"
+/* Undef any of these macros coming from string_32.h. */
+#undef memcpy
+#undef memset
+#undef memcmp
 
 extern "C" void *memcpy(void *dst, const void *src, size_t len);
 extern "C" void *memset(void *dst, int c, size_t len);

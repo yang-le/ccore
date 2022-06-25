@@ -1,10 +1,11 @@
 #pragma once
 
-#include "types.h"
-#include "stdarg.h"
+#include <linux/stdarg.h>
+#include <linux/types.h>
+#include <asm/bootparam.h>
+#include <asm/processor-flags.h>
 #include "ctype.h"
 #include "string.h"
-#include "bootparam.h"
 
 /* Useful macros */
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
@@ -166,7 +167,7 @@ static inline void wrgs32(u32 v, addr_t addr)
 	asm volatile("movl %[v], %%gs:%[addr]" : [addr] "+m" (*(u32 *)addr) : [v] "ri" (v));
 }
 
-/* bioscall.c */
+/* bioscall.S */
 struct biosregs {
 	union {
 		struct {
@@ -210,6 +211,9 @@ struct biosregs {
 
 extern "C" void intcall(u8 int_no, const struct biosregs *ireg, struct biosregs *oreg);
 
+/* header.S */
+[[noreturn]] extern "C" void die(void);
+
 /* regs.cc */
 void initregs(biosregs& regs);
 
@@ -224,3 +228,12 @@ void detect_memory(void);
 int sprintf(char *buf, const char *fmt, ...);
 int vsprintf(char *buf, const char *fmt, va_list args);
 int printf(const char *fmt, ...);
+
+/* a20.c */
+int enable_a20(void);
+
+/* pm.c */
+[[noreturn]] void go_to_protected_mode(void);
+
+/* pmjump.S */
+[[noreturn]] extern "C" void protected_mode_jump(u32 entrypoint, u32 bootparams);

@@ -1,16 +1,15 @@
 #include "boot.h"
 
-[[gnu::aligned(16)]]
+alignas(16)
 struct boot_params boot_params;
 
-[[noreturn]]
 extern "C" int main()
 {
     puts("hello world!\n");
 
     detect_memory();
 
-    char* addr_range_type[] = {
+    const char* addr_range_type[] = {
         "Available",
         "Reserved",
         "ACPI Reclaim",
@@ -30,5 +29,6 @@ extern "C" int main()
             addr_range_type[type]);
     }
 
-    for (;;);
+	/* Do the last things and invoke protected mode */
+	go_to_protected_mode();
 }

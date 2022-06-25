@@ -1,6 +1,8 @@
 #pragma once
 
-#include "types.h"
+#ifndef __ASSEMBLY__
+
+#include <linux/types.h>
 
 /*
  * This is the maximum number of entries in struct boot_params::e820_table
@@ -22,3 +24,5 @@ struct [[gnu::packed]] boot_params {
     u8 __pad[3];
     boot_e820_entry e820_table[E820_MAX_ENTRIES_ZEROPAGE];
 };
+
+#endif /* __ASSEMBLY__ */
