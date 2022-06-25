@@ -1,46 +1,46 @@
-OUTPUT_FORMAT("elf64-x86-64")
-OUTPUT_ARCH(i386:x86-64)
+OUTPUT_FORMAT("elf32-i386")
+OUTPUT_ARCH(i386)
 ENTRY(_start)
-BASE_ADDRESS = 0;
 
 SECTIONS
 {
-    . = BASE_ADDRESS;
-    skernel = .;
+    . = 0;
+    .bstext     : { *(.bstext) }
+    .bsdata     : { *(.bsdata) }
 
-    stext = .;
-    .text : {
-        *(.text.entry)
-        *(.text .text.*)
+    . = 510;
+    .bsflag     : { *(.bsflag) }
+    .inittext   : { *(.inittext) }
+    .initdata   : { *(.initdata) }
+    __end_init = .;
+
+    .text       : { *(.text .text.*) }
+    .text32     : { *(.text32) }
+
+    . = ALIGN(16);
+    .rodata     : { *(.rodata*) }
+
+    . = ALIGN(16);
+    .data       : { *(.data*) }
+
+    . = ALIGN(16);
+    .bss        : {
+        __bss_start = .;
+        *(.bss)
+        __bss_end = .;
     }
-    . = ALIGN(4K);
-    etext = .;
 
-    srodata = .;
-    .rodata : {
-        *(.rodata .rodata.*)
+    . = ALIGN(16);
+    _end = .;
+
+    /DISCARD/   : {
+        *(.note*)
     }
-    . = ALIGN(4K);
-    erodata = .;
 
-    sdata = .;
-    .data : {
-        *(.data .data.*)
-    }
-    . = ALIGN(4K);
-    edata = .;
-
-    .bss : {
-        *(.bss.stack)
-        sbss = .;
-        *(.bss .bss.*)
-    }
-    . = ALIGN(4K);
-    ebss = .;
-
-    ekernel = .;
-
-    /DISCARD/ : {
-        *(.eh_frame)
-    }
+    /*
+	 * The ASSERT() sink to . is intentional, for binutils 2.14 compatibility:
+	 */
+	. = ASSERT(_end <= 0x8000, "Setup too big!");
+	/* Necessary for the very-old-loader check to work... */
+	. = ASSERT(__end_init <= 5*512, "init sections too big!");
 }

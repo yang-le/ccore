@@ -1,32 +1,33 @@
-CC = clang++
+CC = clang
+CXX = clang++
 LD = ld
 OBJCOPY = objcopy
-QEMU = qemu-system-x86_64
+QEMU = qemu-system-i386
 
-OFLAGS = --strip-all -O binary
-CFLAGS = -nostdinc #-m64
-LFLAGS = -nostdlib -Map system.map --script linker.ld #-m elf_x86_64
+REALMODE_CFLAGS = -m16 -g -march=i386 -mregparm=3 -fno-stack-protector -nostdinc
+
+OFLAGS = -O binary --strip-all
+ASFLAGS = $(REALMODE_CFLAGS) 
+CXXFLAGS = $(REALMODE_CFLAGS) 
+LFLAGS = -melf_i386 -nostdlib -Map system.map --script linker.ld
 
 TARGET = ccore
 
-all: boot.o main.o
+all: boot.o main.o bioscall.o tty.o regs.o copy.o memory.o printf.o string.o
 	$(LD) $(LFLAGS) -o $(TARGET) $^
-	
-bin: all
-	$(OBJCOPY) $(OFLAGS) $(TARGET) $(TARGET).bin
 
-img: bin
-	cp $(TARGET).bin $(TARGET).img
-	dd if=/dev/zero of=$(TARGET).img bs=1k seek=1440 count=0
+img: all
+	$(OBJCOPY) $(OFLAGS) $(TARGET) $(TARGET).img
+
+# img: bin
+# 	cp $(TARGET).bin $(TARGET).img
+# 	dd if=/dev/zero of=$(TARGET).img bs=1k seek=1440 count=0
 
 qemu: img
 	$(QEMU) -nographic -fda $(TARGET).img
 
+debug: img
+	$(QEMU) -nographic -fda $(TARGET).img -S -s
+
 clean:
-	rm *.o $(TARGET) $(TARGET).bin $(TARGET).img system.map
-
-%.o : %.cc
-	$(CC) $(CFLAGS) -o $@ -c $^
-
-%.o : %.S
-	$(CC) $(CFLAGS) -x assembler-with-cpp -o $@ -c $^
+	rm *.o $(TARGET) $(TARGET).img system.map
