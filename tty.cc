@@ -23,7 +23,7 @@ void putchar(int ch)
 }
 
 [[gnu::section(".inittext")]]
-void puts(const char *str)
+extern "C" void puts(const char *str)
 {
 	while (*str)
 		putchar(*str++);

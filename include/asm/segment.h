@@ -21,3 +21,18 @@
 #define __BOOT_CS		(GDT_ENTRY_BOOT_CS*8)
 #define __BOOT_DS		(GDT_ENTRY_BOOT_DS*8)
 #define __BOOT_TSS		(GDT_ENTRY_BOOT_TSS*8)
+
+
+#define GDT_ENTRY_KERNEL32_CS	1
+#define GDT_ENTRY_KERNEL_CS		2
+#define GDT_ENTRY_KERNEL_DS		3
+
+/*
+ * Segment selector values corresponding to the above entries:
+ *
+ * Note, selectors also need to have a correct RPL,
+ * expressed with the +3 value for user-space selectors:
+ */
+#define __KERNEL32_CS			(GDT_ENTRY_KERNEL32_CS*8)
+#define __KERNEL_CS			(GDT_ENTRY_KERNEL_CS*8)
+#define __KERNEL_DS			(GDT_ENTRY_KERNEL_DS*8)

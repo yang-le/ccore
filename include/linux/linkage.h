@@ -48,3 +48,38 @@
 /* SYM_FUNC_START_WEAK_NOALIGN -- use for weak functions, w/o alignment */
 #define SYM_FUNC_START_WEAK_NOALIGN(name)		\
 	SYM_START(name, SYM_L_WEAK, SYM_A_NONE)
+
+
+/* SYM_CODE_START -- use for non-C (special) functions */
+#define SYM_CODE_START(name)				\
+	SYM_START(name, SYM_L_GLOBAL, SYM_A_ALIGN)
+
+/* SYM_CODE_END -- the end of SYM_CODE_START_LOCAL, SYM_CODE_START, ... */
+#define SYM_CODE_END(name)				\
+	SYM_END(name, @notype)
+
+
+/* SYM_DATA_START -- global data symbol */
+#define SYM_DATA_START(name)				\
+	SYM_START(name, SYM_L_GLOBAL, SYM_A_NONE)
+
+/* SYM_DATA_START -- local data symbol */
+#define SYM_DATA_START_LOCAL(name)			\
+	SYM_START(name, SYM_L_LOCAL, SYM_A_NONE)
+
+/* SYM_DATA_END -- the end of SYM_DATA_START symbol */
+#define SYM_DATA_END(name)				\
+	SYM_END(name, @object)
+
+/* SYM_DATA_END_LABEL -- the labeled end of SYM_DATA_START symbol */
+#define SYM_DATA_END_LABEL(name, linkage, label)	\
+	linkage(label);				\
+	.type label @object;		\
+	label:						\
+	SYM_END(name, @object)
+
+/* SYM_DATA_LOCAL -- start+end wrapper around simple local data */
+#define SYM_DATA_LOCAL(name, data...)			\
+	SYM_DATA_START_LOCAL(name);			\
+	data;						\
+	SYM_DATA_END(name)

@@ -1,5 +1,9 @@
 #pragma once
 
+#define STACK_SIZE	1024	/* Minimum number of bytes for stack */
+
+#ifndef __ASSEMBLY__
+
 #include <linux/stdarg.h>
 #include <linux/types.h>
 #include <asm/bootparam.h>
@@ -218,7 +222,7 @@ extern "C" void intcall(u8 int_no, const struct biosregs *ireg, struct biosregs 
 void initregs(biosregs& regs);
 
 /* tty.cc */
-void puts(const char *);
+extern "C" void puts(const char *);
 void putchar(int);
 
 /* memory.c */
@@ -237,3 +241,5 @@ int enable_a20(void);
 
 /* pmjump.S */
 [[noreturn]] extern "C" void protected_mode_jump(u32 entrypoint, u32 bootparams);
+
+#endif /* __ASSEMBLY__ */

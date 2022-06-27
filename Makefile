@@ -1,34 +1,58 @@
-CC = clang
-CXX = clang++
-LD = ld
-OBJCOPY = objcopy
-QEMU = qemu-system-i386
+CC 				:= clang
+CXX 			:= clang++
+LD 				:= ld
+OBJCOPY 		:= objcopy
+QEMU 			:= qemu-system-i386
 
-REALMODE_CFLAGS = -m16 -g -Os -march=i386 -mregparm=3 -fno-stack-protector -nostdinc
+# For gcc stack alignment is specified with -mpreferred-stack-boundary,
+# clang has the option -mstack-alignment for that purpose.
+ifneq ($(call cc-option, -mpreferred-stack-boundary=4),)
+      cc_stack_align4 := -mpreferred-stack-boundary=2
+      cc_stack_align8 := -mpreferred-stack-boundary=3
+else ifneq ($(call cc-option, -mstack-alignment=16),)
+      cc_stack_align4 := -mstack-alignment=4
+      cc_stack_align8 := -mstack-alignment=8
+endif
 
-OFLAGS = -O binary --strip-all
-ASFLAGS = $(REALMODE_CFLAGS) -Iinclude
-CXXFLAGS = $(REALMODE_CFLAGS) -Iinclude
-LFLAGS = -melf_i386 -nostdlib -Map system.map --script
+# How to compile the 16-bit code.  Note we always compile for -march=i386;
+# that way we can complain to the user if the CPU is insufficient.
+REALMODE_CFLAGS	:= -m16 -g -Os -DDISABLE_BRANCH_PROFILING -D__DISABLE_EXPORTS \
+		   -Wall -Wstrict-prototypes -march=i386 -mregparm=3 \
+		   -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
+		   -mno-mmx -mno-sse $(call cc-option,-fcf-protection=none)
 
-TARGET = ccore
-ALL_OBJS = boot.o main.o bioscall.o tty.o regs.o copy.o memory.o printf.o string.o a20.o pm.o pmjump.o
+REALMODE_CFLAGS += -ffreestanding
+REALMODE_CFLAGS += -fno-stack-protector
+REALMODE_CFLAGS += -Wno-address-of-packed-member
+REALMODE_CFLAGS += $(cc_stack_align4)
+REALMODE_CFLAGS += --target=x86_64-linux-gnu -fintegrated-as
 
-all: linker.ld $(ALL_OBJS)
-	$(LD) -o $(TARGET) $(LFLAGS) $^
+CXXFLAGS 		:= $(REALMODE_CFLAGS) -Iinclude -D_SETUP
+CXXFLAGS 		+=-fno-asynchronous-unwind-tables
+ASFLAGS 		:= $(CXXFLAGS) -D__ASSEMBLY__
 
-img: all
-	$(OBJCOPY) $(OFLAGS) $(TARGET) $(TARGET).img
+# If you want to preset the SVGA mode, uncomment the next line and
+# set SVGA_MODE to whatever number you want.
+# Set it to -DSVGA_MODE=NORMAL_VGA if you just want the EGA/VGA mode.
+# The number is the same as you would ordinarily press at bootup.
 
-# img: bin
-# 	cp $(TARGET).bin $(TARGET).img
-# 	dd if=/dev/zero of=$(TARGET).img bs=1k seek=1440 count=0
+SVGA_MODE	:= -DSVGA_MODE=NORMAL_VGA
 
-qemu: img
-	$(QEMU) -nographic -fda $(TARGET).img
+setup-objs 	+= a20.o bioscall.o copy.o
+setup-objs 	+= header.o main.o memory.o
+setup-objs 	+= pm.o pmjump.o printf.o regs.o string.o tty.o
 
-debug: img
-	$(QEMU) -nographic -fda $(TARGET).img -S -s
+setup.elf: setup.ld $(setup-objs)
+	$(LD) -Map setup.map -o $@ -m elf_i386 --script $^
+
+setup.bin: setup.elf
+	$(OBJCOPY) -O binary $< $@
+
+qemu: setup.bin
+	$(QEMU) -nographic -kernel $<
+
+debug: setup.bin
+	$(QEMU) -nographic -kernel $< -S -s
 
 clean:
-	rm *.o $(TARGET) $(TARGET).img system.map
+	rm *.o *.elf *.bin *.map
