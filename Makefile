@@ -1,7 +1,8 @@
 CC 				:= clang
 CXX 			:= clang++
 LD 				:= ld
-OBJCOPY 		:= objcopy
+OBJCOPY 		:= llvm-objcopy
+
 QEMU 			:= qemu-system-i386
 
 # For gcc stack alignment is specified with -mpreferred-stack-boundary,
@@ -28,7 +29,8 @@ REALMODE_CFLAGS += $(cc_stack_align4)
 REALMODE_CFLAGS += --target=x86_64-linux-gnu -fintegrated-as
 
 CXXFLAGS 		:= $(REALMODE_CFLAGS) -Iinclude -D_SETUP
-CXXFLAGS 		+=-fno-asynchronous-unwind-tables
+CXXFLAGS 		+= -fno-asynchronous-unwind-tables
+CXXFLAGS 		+= -std=c++20
 ASFLAGS 		:= $(CXXFLAGS) -D__ASSEMBLY__
 
 # If you want to preset the SVGA mode, uncomment the next line and
@@ -48,11 +50,21 @@ setup.elf: setup.ld $(setup-objs)
 setup.bin: setup.elf
 	$(OBJCOPY) -O binary $< $@
 
-qemu: setup.bin
+vmlinux.bin: setup.bin compressed/vmlinux.bin tools/build
+	tools/build setup.bin compressed/vmlinux.bin $@
+
+tools/build: tools/build.cc
+	$(CXX) --std=c++20 -o $@ $<
+
+compressed/vmlinux.bin:
+	$(MAKE) -C compressed vmlinux.bin
+
+qemu: vmlinux.bin
 	$(QEMU) -nographic -kernel $<
 
 debug: setup.bin
 	$(QEMU) -nographic -kernel $< -S -s
 
 clean:
-	rm *.o *.elf *.bin *.map
+	$(MAKE) -C compressed clean
+	@-rm *.o *.elf *.bin *.map tools/build 2> /dev/null

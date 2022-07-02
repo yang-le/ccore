@@ -20,8 +20,9 @@ struct [[gnu::packed]] boot_e820_entry {
 };
 
 struct [[gnu::packed]] boot_params {
-    u8 e820_entries;
+    u32 scratch;
     u8 __pad[3];
+    u8 e820_entries;
     boot_e820_entry e820_table[E820_MAX_ENTRIES_ZEROPAGE];
 };
 

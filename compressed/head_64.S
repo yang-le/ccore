@@ -25,7 +25,7 @@ SYM_FUNC_START(startup_32)
  * data at 0x1e4 (defined as a scratch field) are used as the stack
  * for this calculation. Only 4 bytes are needed.
  */
-	leal	(0x1e4 + 4)(%esi), %esp
+	leal	4(%esi), %esp
 	call	1f
 1:	popl	%ebp
 	subl	$1b, %ebp

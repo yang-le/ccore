@@ -85,12 +85,12 @@ sentinel:	.byte 0xff, 0xff        /* Used to detect broken loaders */
 
 	.globl	hdr
 hdr:
-setup_sects:	.byte 8  /* Filled in by build.c */
+setup_sects:	.byte 0  	/* Filled in by build.cc */
 root_flags:	.word ROOT_RDONLY
-syssize:	.long 0			/* Filled in by build.c */
+syssize:	.long 0			/* Filled in by build.cc */
 ram_size:	.word 0			/* Obsolete */
 vid_mode:	.word SVGA_MODE
-root_dev:	.word 0			/* Filled in by build.c */
+root_dev:	.word 0			/* Filled in by build.cc */
 boot_flag:	.word 0xAA55
 
 	# offset 512, entry point
@@ -103,11 +103,6 @@ _start:
 		.byte	0xeb		# short (2-byte) jump
 		.byte	start_of_setup - 1f
 1:
-
-	# Part 2 of the header, from the old setup.S
-
-		.ascii	"HdrS"		# header signature
-
 # End of setup header #####################################################
 
 	.section ".entrytext", "ax"
