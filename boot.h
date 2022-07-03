@@ -14,6 +14,7 @@
 /* Useful macros */
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 
+extern struct setup_header hdr;
 extern struct boot_params boot_params;
 
 /* Basic port I/O */
@@ -171,6 +172,31 @@ static inline void wrgs32(u32 v, addr_t addr)
 	asm volatile("movl %[v], %%gs:%[addr]" : [addr] "+m" (*(u32 *)addr) : [v] "ri" (v));
 }
 
+/* Heap -- available for dynamic lists. */
+extern char _end[];
+extern char *HEAP;
+extern char *heap_end;
+#define RESET_HEAP() ((void *)( HEAP = _end ))
+static inline char *__get_heap(size_t s, size_t a, size_t n)
+{
+	char *tmp;
+
+	HEAP = (char *)(((size_t)HEAP+(a-1)) & ~(a-1));
+	tmp = HEAP;
+	HEAP += s*n;
+	return tmp;
+}
+#define GET_HEAP(type, n) \
+	((type *)__get_heap(sizeof(type), alignof(type), (n)))
+
+static inline bool heap_free(size_t n)
+{
+	return (int)(heap_end-HEAP) >= (int)n;
+}
+
+/* a20.cc */
+int enable_a20(void);
+
 /* bioscall.S */
 struct biosregs {
 	union {
@@ -215,8 +241,26 @@ struct biosregs {
 
 extern "C" void intcall(u8 int_no, const struct biosregs *ireg, struct biosregs *oreg);
 
+/* copy.S */
+extern "C" void copy_to_fs(addr_t dst, void *src, size_t len);
+extern "C" void *copy_from_fs(void *dst, addr_t src, size_t len);
+
 /* header.S */
 [[noreturn]] extern "C" void die(void);
+
+/* memory.cc */
+void detect_memory(void);
+
+/* pm.cc */
+[[noreturn]] void go_to_protected_mode(void);
+
+/* pmjump.S */
+[[noreturn]] extern "C" void protected_mode_jump(u32 entrypoint, u32 bootparams);
+
+/* printf.cc */
+int sprintf(char *buf, const char *fmt, ...);
+int vsprintf(char *buf, const char *fmt, va_list args);
+int printf(const char *fmt, ...);
 
 /* regs.cc */
 void initregs(biosregs& regs);
@@ -224,22 +268,19 @@ void initregs(biosregs& regs);
 /* tty.cc */
 extern "C" void puts(const char *);
 void putchar(int);
+int getchar(void);
+void kbd_flush(void);
+int getchar_timeout(void);
 
-/* memory.c */
-void detect_memory(void);
+/* video.cc */
+void set_video(void);
 
-/* printf.c */
-int sprintf(char *buf, const char *fmt, ...);
-int vsprintf(char *buf, const char *fmt, va_list args);
-int printf(const char *fmt, ...);
+/* video-mode.cc */
+int set_mode(u16 mode);
+int mode_defined(u16 mode);
+void probe_cards(int unsafe);
 
-/* a20.c */
-int enable_a20(void);
-
-/* pm.c */
-[[noreturn]] void go_to_protected_mode(void);
-
-/* pmjump.S */
-[[noreturn]] extern "C" void protected_mode_jump(u32 entrypoint, u32 bootparams);
+/* video-vesa.c */
+void vesa_store_edid(void);
 
 #endif /* __ASSEMBLY__ */

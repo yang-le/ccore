@@ -14,6 +14,23 @@
 #include <asm/segment.h>
 
 /*
+ * Invoke the realmode switch hook if present; otherwise
+ * disable all interrupts.
+ */
+static void realmode_switch_hook(void)
+{
+	if (boot_params.hdr.realmode_swtch) {
+		asm volatile("lcallw *%0"
+			     : : "m" (boot_params.hdr.realmode_swtch)
+			     : "eax", "ebx", "ecx", "edx");
+	} else {
+		asm volatile("cli");
+		outb(0x80, 0x70); /* Disable NMI */
+		io_delay();
+	}
+}
+
+/*
  * Disable all interrupts at the legacy PIC.
  */
 static void mask_all_interrupts(void)
@@ -56,7 +73,7 @@ static void setup_gdt(void)
 		[GDT_ENTRY_BOOT_DS] = GDT_ENTRY(0xc093, 0, 0xfffff),
 		/* TSS: 32-bit tss, 104 bytes, base 4096 */
 		/* We only have a TSS here to keep Intel VT happy;
-		   we don't actually use it for anything. */
+		   we dont actually use it for anything. */
 		[GDT_ENTRY_BOOT_TSS] = GDT_ENTRY(0x0089, 4096, 103),
 	};
 	/* Xen HVM incorrectly stores a pointer to the gdt_ptr, instead
@@ -85,9 +102,8 @@ static void setup_idt(void)
  */
 void go_to_protected_mode(void)
 {
-    asm volatile("cli");
-    outb(0x80, 0x70); /* Disable NMI */
-    io_delay();
+	/* Hook before leaving real mode, also disables interrupts */
+	realmode_switch_hook();
 
     /* Enable the A20 gate */
 	if (enable_a20()) {
@@ -104,5 +120,5 @@ void go_to_protected_mode(void)
 	/* Actual transition to protected mode... */
 	setup_idt();
 	setup_gdt();
-	protected_mode_jump(0x100000, (u32)&boot_params + (ds() << 4));
+	protected_mode_jump(boot_params.hdr.code32_start, (u32)&boot_params + (ds() << 4));
 }

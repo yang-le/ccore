@@ -103,6 +103,85 @@ _start:
 		.byte	0xeb		# short (2-byte) jump
 		.byte	start_of_setup - 1f
 1:
+
+	# Part 2 of the header, from the old setup.S
+
+		.ascii	"HdrS"		# header signature
+		.word	0x0204		# header version number (>= 0x0105)
+					# or else old loadlin-1.5 will fail)
+		.globl realmode_swtch
+realmode_swtch:	.word	0, 0		# default_switch, SETUPSEG
+start_sys_seg:	.word	SYSSEG		# obsolete and meaningless, but just
+					# in case something decided to "use" it
+		.word	0 	# pointing to kernel version string
+					# above section of header is compatible
+					# with loadlin-1.5 (header v1.5). Don't
+					# change it.
+
+type_of_loader:	.byte	0		# 0 means ancient bootloader, newer
+					# bootloaders know to change this.
+					# See Documentation/x86/boot.rst for
+					# assigned ids
+
+# flags, unused bits must be zero (RFU) bit within loadflags
+loadflags:
+		.byte	LOADED_HIGH	# The kernel is to be loaded high
+
+setup_move_size: .word  0x8000		# size to move, when setup is not
+					# loaded at 0x90000. We will move setup
+					# to 0x90000 then just before jumping
+					# into the kernel. However, only the
+					# loader knows how much data behind
+					# us also needs to be loaded.
+
+code32_start:		# here loaders can put a different
+					# start address for 32-bit code.
+		.long	0x100000	# 0x100000 = default for big kernel
+
+ramdisk_image:	.long	0		# address of loaded ramdisk image
+					# Here the loader puts the 32-bit
+					# address where it loaded the image.
+					# This only will be read by the kernel.
+
+ramdisk_size:	.long	0		# its size in bytes
+
+bootsect_kludge:
+		.long	0		# obsolete
+
+heap_end_ptr:	.word	_end+STACK_SIZE-512
+					# (Header version 0x0201 or later)
+					# space from here (exclusive) down to
+					# end of setup code can be used by setup
+					# for local heap purposes.
+
+ext_loader_ver:
+		.byte	0		# Extended boot loader version
+ext_loader_type:
+		.byte	0		# Extended boot loader type
+
+cmd_line_ptr:	.long	0		# (Header version 0x0202 or later)
+					# If nonzero, a 32-bit pointer
+					# to the kernel command line.
+					# The command line should be
+					# located between the start of
+					# setup and the end of low
+					# memory (0xa0000), or it may
+					# get overwritten before it
+					# gets read.  If this field is
+					# used, there is no longer
+					# anything magical about the
+					# 0x90000 segment; the setup
+					# can be located anywhere in
+					# low memory 0x10000 or higher.
+
+initrd_addr_max: .long 0x7fffffff
+					# (Header version 0x0203 or later)
+					# The highest safe address for
+					# the contents of an initrd
+					# The current kernel allows up to 4 GB,
+					# but leave it at 2 GB to avoid
+					# possible bootloader bugs.
+
 # End of setup header #####################################################
 
 	.section ".entrytext", "ax"

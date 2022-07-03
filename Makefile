@@ -3,7 +3,7 @@ CXX 			:= clang++
 LD 				:= ld
 OBJCOPY 		:= llvm-objcopy
 
-QEMU 			:= qemu-system-i386
+QEMU 			:= qemu-system-i386.exe
 
 # For gcc stack alignment is specified with -mpreferred-stack-boundary,
 # clang has the option -mstack-alignment for that purpose.
@@ -42,7 +42,16 @@ SVGA_MODE	:= -DSVGA_MODE=NORMAL_VGA
 
 setup-objs 	+= a20.o bioscall.o copy.o
 setup-objs 	+= header.o main.o memory.o
-setup-objs 	+= pm.o pmjump.o printf.o regs.o string.o tty.o
+setup-objs 	+= pm.o pmjump.o printf.o regs.o string.o tty.o video.o
+setup-objs	+= video-mode.o
+
+# The link order of the video-*.o modules can matter.  In particular,
+# video-vga.o *must* be listed first, followed by video-vesa.o.
+# Hardware-specific drivers should follow in the order they should be
+# probed, and video-bios.o should typically be last.
+setup-objs	+= video-vga.o
+setup-objs	+= video-vesa.o
+setup-objs	+= video-bios.o
 
 setup.elf: setup.ld $(setup-objs)
 	$(LD) -Map setup.map -o $@ -m elf_i386 --script $^
@@ -60,10 +69,10 @@ compressed/vmlinux.bin:
 	$(MAKE) -C compressed vmlinux.bin
 
 qemu: vmlinux.bin
-	$(QEMU) -nographic -kernel $<
+	$(QEMU) -kernel $<
 
 debug: setup.bin
-	$(QEMU) -nographic -kernel $< -S -s
+	$(QEMU) -kernel $< -S -s
 
 clean:
 	$(MAKE) -C compressed clean

@@ -25,7 +25,7 @@ SYM_FUNC_START(startup_32)
  * data at 0x1e4 (defined as a scratch field) are used as the stack
  * for this calculation. Only 4 bytes are needed.
  */
-	leal	4(%esi), %esp
+	leal	(0x1e4 + 4)(%esi), %esp
 	call	1f
 1:	popl	%ebp
 	subl	$1b, %ebp
@@ -157,7 +157,56 @@ SYM_CODE_START(startup_64)
 	cld
 	cli
 
+	/* Setup data segments. */
+	xorl	%eax, %eax
+	movl	%eax, %ds
+	movl	%eax, %es
+	movl	%eax, %ss
+	movl	%eax, %fs
+	movl	%eax, %gs
+
+	movq	0x1000000, %rbp
+
+	/* Set up the stack */
+	leaq	boot_stack_end(%rbx), %rsp
+
+	/* Zero EFLAGS */
+	pushq	$0
+	popfq
+
+/*
+ * Jump to the relocated address.
+ */
+	leaq	.Lrelocated(%rbx), %rax
+	jmp	*%rax
 SYM_CODE_END(startup_64)
+
+	.text
+SYM_FUNC_START_LOCAL_NOALIGN(.Lrelocated)
+
+/*
+ * Clear BSS (stack is currently empty)
+ */
+	xorl	%eax, %eax
+	leaq    _bss(%rip), %rdi
+	leaq    _ebss(%rip), %rcx
+	subq	%rdi, %rcx
+	shrq	$3, %rcx
+	rep	stosq
+
+	pushq	%rsi
+	call	load_stage2_idt
+
+	/* Pass boot_params to initialize_identity_maps() */
+	movq	(%rsp), %rdi
+	call	initialize_identity_maps
+	popq	%rsi
+
+/*
+ * Jump to the decompressed kernel.
+ */
+	jmp	*%rbp
+SYM_FUNC_END(.Lrelocated)
 
 	.data
 SYM_DATA_START_LOCAL(gdt64)
