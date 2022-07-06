@@ -107,7 +107,7 @@ _start:
 	# Part 2 of the header, from the old setup.S
 
 		.ascii	"HdrS"		# header signature
-		.word	0x0204		# header version number (>= 0x0105)
+		.word	0x020f		# header version number (>= 0x0105)
 					# or else old loadlin-1.5 will fail)
 		.globl realmode_swtch
 realmode_swtch:	.word	0, 0		# default_switch, SETUPSEG
@@ -181,6 +181,45 @@ initrd_addr_max: .long 0x7fffffff
 					# The current kernel allows up to 4 GB,
 					# but leave it at 2 GB to avoid
 					# possible bootloader bugs.
+
+kernel_alignment:  .long 0	#physical addr alignment
+						#required for protected mode
+						#kernel
+
+relocatable_kernel:    .byte 1
+
+min_alignment:		.byte 0	# minimum alignment
+
+xloadflags:
+# define XLF0 XLF_KERNEL_64
+# define XLF1 XLF_CAN_BE_LOADED_ABOVE_4G
+# define XLF23 0
+# define XLF4 0
+# define XLF56 XLF_5LEVEL
+
+			.word XLF0 | XLF1 | XLF23 | XLF4 | XLF56
+
+cmdline_size:   .long   0     #length of the command line,
+                                                #added with boot protocol
+                                                #version 2.06
+
+hardware_subarch:	.long 0			# subarchitecture, added with 2.07
+						# default to 0 for normal x86 PC
+
+hardware_subarch_data:	.quad 0
+
+payload_offset:		.long 0
+payload_length:		.long 0
+
+setup_data:		.quad 0			# 64-bit physical pointer to
+						# single linked list of
+						# struct setup_data
+
+pref_address:	.quad 0x100000	# preferred load addr
+
+init_size:		.long 0			# kernel initialization size
+handover_offset:	.long 0			# Filled in by build.c
+kernel_info_offset:	.long 0			# Filled in by build.c
 
 # End of setup header #####################################################
 

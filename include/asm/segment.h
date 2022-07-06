@@ -33,6 +33,6 @@
  * Note, selectors also need to have a correct RPL,
  * expressed with the +3 value for user-space selectors:
  */
-#define __KERNEL32_CS			(GDT_ENTRY_KERNEL32_CS*8)
+#define __KERNEL32_CS		(GDT_ENTRY_KERNEL32_CS*8)
 #define __KERNEL_CS			(GDT_ENTRY_KERNEL_CS*8)
 #define __KERNEL_DS			(GDT_ENTRY_KERNEL_DS*8)

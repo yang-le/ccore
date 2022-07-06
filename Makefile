@@ -3,7 +3,7 @@ CXX 			:= clang++
 LD 				:= ld
 OBJCOPY 		:= llvm-objcopy
 
-QEMU 			:= qemu-system-i386.exe
+QEMU 			:= qemu-system-x86_64
 
 # For gcc stack alignment is specified with -mpreferred-stack-boundary,
 # clang has the option -mstack-alignment for that purpose.
@@ -59,20 +59,24 @@ setup.elf: setup.ld $(setup-objs)
 setup.bin: setup.elf
 	$(OBJCOPY) -O binary $< $@
 
-vmlinux.bin: setup.bin compressed/vmlinux.bin tools/build
-	tools/build setup.bin compressed/vmlinux.bin $@
+vmlinux.bin: compressed/vmlinux
+	$(OBJCOPY) -O binary -R .note -R .comment -S $< $@
+
+bzImage: setup.bin vmlinux.bin tools/build
+	tools/build setup.bin vmlinux.bin $@
+	cat vmlinux.bin >> $@
 
 tools/build: tools/build.cc
 	$(CXX) --std=c++20 -o $@ $<
 
-compressed/vmlinux.bin:
-	$(MAKE) -C compressed vmlinux.bin
+compressed/vmlinux:
+	$(MAKE) -C compressed vmlinux
 
-qemu: vmlinux.bin
-	$(QEMU) -kernel $<
+qemu: bzImage
+	$(QEMU) -nographic -kernel $<
 
-debug: setup.bin
-	$(QEMU) -kernel $< -S -s
+debug: bzImage
+	$(QEMU) -nographic -kernel $< -S -s
 
 clean:
 	$(MAKE) -C compressed clean

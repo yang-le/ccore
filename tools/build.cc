@@ -102,12 +102,5 @@ int main(int argc, char** argv)
         return 1;   
     }
     
-    /* Copy the kernel code */
-    char ch;
-    while (!kernel.eof()) {
-        kernel >> ch;
-        image << ch;
-    }
-    
     return 0;
 }

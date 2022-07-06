@@ -28,7 +28,7 @@ vmlinux-objs += ident_map_64.o
 vmlinux-objs += idt_64.o
 
 vmlinux: vmlinux.ld $(vmlinux-objs)
-	$(LD) -Map vmlinux.map -o $@ -m elf_x86_64 --no-dynamic-linker --script $^
+	$(LD) -Map vmlinux.map -o $@ -m elf_x86_64 -pie --no-dynamic-linker --script $^
 
 vmlinux.bin: vmlinux
 	$(OBJCOPY) -R .comment -S $< $@

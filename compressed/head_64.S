@@ -4,8 +4,43 @@
 #include <asm/processor-flags.h>
 #include <asm/bootparam.h>
 
+	.code32
     .text
+
+/*
+ * Locally defined symbols should be marked hidden:
+ */
+	.hidden _bss
+	.hidden _ebss
+	.hidden _end
+
     .section    ".head.text","ax"
+
+/*
+ * This macro gives the relative virtual address of X, i.e. the offset of X
+ * from startup_32. This is the same as the link-time virtual address of X,
+ * since startup_32 is at 0, but defining it this way tells the
+ * assembler/linker that we do not want the actual run-time address of X. This
+ * prevents the linker from trying to create unwanted run-time relocation
+ * entries for the reference when the compressed kernel is linked as PIE.
+ *
+ * A reference X(%reg) will result in the link-time VA of X being stored with
+ * the instruction, and a run-time R_X86_64_RELATIVE relocation entry that
+ * adds the 64-bit base address where the kernel is loaded.
+ *
+ * Replacing it with (X-startup_32)(%reg) results in the offset being stored,
+ * and no run-time relocation.
+ *
+ * The macro should be used as a displacement with a base register containing
+ * the run-time address of startup_32 [i.e. rva(X)(%reg)], or as an immediate
+ * [$ rva(X)].
+ *
+ * This macro can only be used from within the .head.text section, since the
+ * expression requires startup_32 to be in the same section as the code being
+ * assembled.
+ */
+#define rva(X) ((X) - startup_32)
+
     .code32
 SYM_FUNC_START(startup_32)
 	/*
@@ -28,15 +63,15 @@ SYM_FUNC_START(startup_32)
 	leal	(0x1e4 + 4)(%esi), %esp
 	call	1f
 1:	popl	%ebp
-	subl	$1b, %ebp
+	subl	$ rva(1b), %ebp
 
 	/* Load new GDT with the 64bit segments using 32bit descriptor */
-	leal	gdt(%ebp), %eax
+	leal	rva(gdt)(%ebp), %eax
 	movl	%eax, 2(%eax)
 	lgdt	(%eax)
 
 	/* Load segment registers with our descriptors */
-	movl	$__BOOT_DS, %eax
+	movl	$__KERNEL_DS, %eax
 	movl	%eax, %ds
 	movl	%eax, %es
 	movl	%eax, %fs
@@ -44,15 +79,15 @@ SYM_FUNC_START(startup_32)
 	movl	%eax, %ss
 
 	/* Setup a stack and load CS from current GDT */
-	leal	boot_stack_end(%ebp), %esp
+	leal	rva(boot_stack_end)(%ebp), %esp
 
 	pushl	$__KERNEL32_CS
-	leal	1f(%ebp), %eax
+	leal	rva(1f)(%ebp), %eax
 	pushl	%eax
 	lretl
 1:
-    movl	0x1000000, %ebx
 
+    movl	$0x1000000, %ebx
 
 /*
  * Prepare for entering 64 bit mode
@@ -68,19 +103,19 @@ SYM_FUNC_START(startup_32)
   */
 
     /* Initialize Page tables to 0 */
-	leal	pgtable(%ebx), %edi
+	leal	rva(pgtable)(%ebx), %edi
 	xorl	%eax, %eax
 	movl	$(BOOT_INIT_PGT_SIZE/4), %ecx
 	rep	stosl
 
 	/* Build Level 4 */
-	leal	pgtable(%ebx), %edi
+	leal	rva(pgtable + 0)(%ebx), %edi
 	leal	0x1007 (%edi), %eax
 	movl	%eax, 0(%edi)
 	addl	%edx, 4(%edi)
 
 	/* Build Level 3 */
-	leal	(pgtable + 0x1000)(%ebx), %edi
+	leal	rva(pgtable + 0x1000)(%ebx), %edi
 	leal	0x1007(%edi), %eax
 	movl	$4, %ecx
 1:	movl	%eax, 0x00(%edi)
@@ -91,7 +126,7 @@ SYM_FUNC_START(startup_32)
 	jnz	1b
 
 	/* Build Level 2 */
-	leal	(pgtable + 0x2000)(%ebx), %edi
+	leal	rva(pgtable + 0x2000)(%ebx), %edi
 	movl	$0x00000183, %eax
 	movl	$2048, %ecx
 1:	movl	%eax, 0(%edi)
@@ -102,7 +137,7 @@ SYM_FUNC_START(startup_32)
 	jnz	1b
 
 	/* Enable the boot page tables */
-	leal	pgtable(%ebx), %eax
+	leal	rva(pgtable)(%ebx), %eax
 	movl	%eax, %cr3
 
     /* Enable Long mode in EFER (Extended Feature Enable Register) */
@@ -127,7 +162,7 @@ SYM_FUNC_START(startup_32)
 	 * We place all of the values on our mini stack so lret can
 	 * used to perform that far jump.
 	 */
-	leal	startup_64(%ebp), %eax
+	leal	rva(startup_64)(%ebp), %eax
 
 	pushl	$__KERNEL_CS
 	pushl	%eax
@@ -165,10 +200,10 @@ SYM_CODE_START(startup_64)
 	movl	%eax, %fs
 	movl	%eax, %gs
 
-	movq	0x1000000, %rbp
+	movq	$0x1000000, %rbp
 
 	/* Set up the stack */
-	leaq	boot_stack_end(%rbx), %rsp
+	leaq	rva(boot_stack_end)(%rbx), %rsp
 
 	/* Zero EFLAGS */
 	pushq	$0
@@ -177,7 +212,7 @@ SYM_CODE_START(startup_64)
 /*
  * Jump to the relocated address.
  */
-	leaq	.Lrelocated(%rbx), %rax
+	leaq	rva(.Lrelocated)(%rbx), %rax
 	jmp	*%rax
 SYM_CODE_END(startup_64)
 

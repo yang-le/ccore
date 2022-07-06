@@ -130,7 +130,21 @@ void debug_print_boot_params(void)
 		"ext_loader_ver %x \n"
 		"ext_loader_type %x\n"
 		"cmd_line_ptr %x\n"
-		"initrd_addr_max %x\n",
+		"initrd_addr_max %x\n"
+		"kernel_alignment %x\n"
+		"relocatable_kernel %d\n"
+		"min_alignment %d\n"
+		"xloadflags %x\n"
+		"cmdline_size %d\n"
+		"hardware_subarch %x\n"
+		"hardware_subarch_data %x%x\n"
+		"payload_offset %x\n"
+		"payload_length %x\n"
+		"setup_data %x%x\n"
+		"pref_address %x%x\n"
+		"init_size %x\n"
+		"handover_offset %x\n"
+		"kernel_info_offset %x\n",
 		boot_params.hdr.setup_sects,
 		boot_params.hdr.root_flags,
 		boot_params.hdr.syssize,
@@ -155,7 +169,24 @@ void debug_print_boot_params(void)
 		boot_params.hdr.ext_loader_ver,
 		boot_params.hdr.ext_loader_type,
 		boot_params.hdr.cmd_line_ptr,
-		boot_params.hdr.initrd_addr_max
+		boot_params.hdr.initrd_addr_max,
+		boot_params.hdr.kernel_alignment,
+		boot_params.hdr.relocatable_kernel,
+		boot_params.hdr.min_alignment,
+		boot_params.hdr.xloadflags,
+		boot_params.hdr.cmdline_size,
+		boot_params.hdr.hardware_subarch,
+		(u32)(boot_params.hdr.hardware_subarch_data >> 32),
+		(u32)boot_params.hdr.hardware_subarch_data,
+		boot_params.hdr.payload_offset,
+		boot_params.hdr.payload_length,
+		(u32)(boot_params.hdr.setup_data >> 32),
+		(u32)boot_params.hdr.setup_data,
+		(u32)(boot_params.hdr.pref_address >> 32),
+		(u32)boot_params.hdr.pref_address,
+		boot_params.hdr.init_size,
+		boot_params.hdr.handover_offset,
+		boot_params.hdr.kernel_info_offset
 	);
 }
 

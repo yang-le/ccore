@@ -66,20 +66,20 @@ struct [[gnu::packed]] setup_header {
 	u8	ext_loader_type;
 	u32	cmd_line_ptr;
 	u32	initrd_addr_max;
-	// __u32	kernel_alignment;
-	// __u8	relocatable_kernel;
-	// __u8	min_alignment;
-	// __u16	xloadflags;
-	// __u32	cmdline_size;
-	// __u32	hardware_subarch;
-	// __u64	hardware_subarch_data;
-	// __u32	payload_offset;
-	// __u32	payload_length;
-	// __u64	setup_data;
-	// __u64	pref_address;
-	// __u32	init_size;
-	// __u32	handover_offset;
-	// __u32	kernel_info_offset;
+	u32	kernel_alignment;
+	u8	relocatable_kernel;
+	u8	min_alignment;
+	u16	xloadflags;
+	u32	cmdline_size;
+	u32	hardware_subarch;
+	u64	hardware_subarch_data;
+	u32	payload_offset;
+	u32	payload_length;
+	u64	setup_data;
+	u64	pref_address;
+	u32	init_size;
+	u32	handover_offset;
+	u32	kernel_info_offset;
 };
 
 #define EDD_MBR_SIG_MAX 16        /* max number of signatures to store */
