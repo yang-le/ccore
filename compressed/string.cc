@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * This provides an optimized implementation of memcpy, and a simplified
+ * implementation of memset and memmove. These are used here because the
+ * standard kernel runtime versions are not yet available and we don't
+ * trust the gcc built-in implementations as they may do unexpected things
+ * (e.g. FPU ops) in the minimal decompression stub execution environment.
+ */
+#include "error.h"
+
+#include "../string.cc"
+
+static void *____memcpy(void *dest, const void *src, size_t n)
+{
+	long d0, d1, d2;
+	asm volatile(
+		"rep ; movsq\n\t"
+		"movq %4,%%rcx\n\t"
+		"rep ; movsb\n\t"
+		: "=&c" (d0), "=&D" (d1), "=&S" (d2)
+		: "0" (n >> 3), "g" (n & 7), "1" (dest), "2" (src)
+		: "memory");
+
+	return dest;
+}
+
+void *memset(void *s, int c, size_t n)
+{
+	int i;
+	char *ss = (char *)s;
+
+	for (i = 0; i < n; i++)
+		ss[i] = c;
+	return s;
+}
+
+void *memmove(void *dest, const void *src, size_t n)
+{
+	unsigned char *d = (unsigned char *)dest;
+	const unsigned char *s = (unsigned char *)src;
+
+	if (d <= s || d - s >= n)
+		return ____memcpy(dest, src, n);
+
+	while (n-- > 0)
+		d[n] = s[n];
+
+	return dest;
+}
+
+/* Detect and warn about potential overlaps, but handle them with memmove. */
+void *memcpy(void *dest, const void *src, size_t n)
+{
+	if (dest > src && (unsigned char *)dest - (unsigned char *)src < n) {
+		warn("Avoiding potentially unsafe overlapping memcpy()!");
+		return memmove(dest, src, n);
+	}
+	return ____memcpy(dest, src, n);
+}

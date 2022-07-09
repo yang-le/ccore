@@ -80,4 +80,4 @@ debug: bzImage
 
 clean:
 	$(MAKE) -C compressed clean
-	@-rm *.o *.elf *.bin *.map tools/build 2> /dev/null
+	@-rm *.o *.elf *.bin *.map bzImage tools/build 2> /dev/null

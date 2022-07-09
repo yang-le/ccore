@@ -205,9 +205,50 @@ SYM_CODE_START(startup_64)
 	/* Set up the stack */
 	leaq	rva(boot_stack_end)(%rbx), %rsp
 
+	/* Make sure we have GDT with 32-bit code segment */
+	leaq	gdt64(%rip), %rax
+	addq	%rax, 2(%rax)
+	lgdt	(%rax)
+
+	/* Reload CS so IRET returns to a CS actually in the GDT */
+	pushq	$__KERNEL_CS
+	leaq	.Lon_kernel_cs(%rip), %rax
+	pushq	%rax
+	lretq
+
+.Lon_kernel_cs:
+
+	pushq	%rsi
+	call	load_stage1_idt
+	popq	%rsi
+
 	/* Zero EFLAGS */
 	pushq	$0
 	popfq
+
+/*
+ * Copy the compressed kernel to the end of our buffer
+ * where decompression in place becomes safe.
+ */
+	pushq	%rsi
+	leaq	(_bss-8)(%rip), %rsi
+	leaq	rva(_bss-8)(%rbx), %rdi
+	movl	$(_bss - startup_32), %ecx
+	shrl	$3, %ecx
+	std
+	rep	movsq
+	cld
+	popq	%rsi
+
+	/*
+	 * The GDT may get overwritten either during the copy we just did or
+	 * during extract_kernel below. To avoid any issues, repoint the GDTR
+	 * to the new copy of the GDT.
+	 */
+	leaq	rva(gdt64)(%rbx), %rax
+	leaq	rva(gdt)(%rbx), %rdx
+	movq	%rdx, 2(%rax)
+	lgdt	(%rax)
 
 /*
  * Jump to the relocated address.

@@ -23,9 +23,9 @@ CXXFLAGS 		+= -Wa,-mrelax-relocations=no
 CXXFLAGS 		+= -std=c++20
 ASFLAGS  		:= $(CXXFLAGS) -D__ASSEMBLY__
 
-vmlinux-objs := head_64.o misc.o error.o
-vmlinux-objs += ident_map_64.o
-vmlinux-objs += idt_64.o
+vmlinux-objs := head.o misc.o string.o error.o
+vmlinux-objs += ident_map.o
+vmlinux-objs += idt.o idt_handlers.o
 
 vmlinux: vmlinux.ld $(vmlinux-objs)
 	$(LD) -Map vmlinux.map -o $@ -m elf_x86_64 -pie --no-dynamic-linker --script $^
