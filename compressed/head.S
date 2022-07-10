@@ -279,6 +279,14 @@ SYM_FUNC_START_LOCAL_NOALIGN(.Lrelocated)
 	popq	%rsi
 
 /*
+ * Do the extraction, and jump to the new kernel..
+ */
+	pushq	%rsi			/* Save the real mode argument */
+	movq	%rsi, %rdi		/* real mode address */
+	call	extract_kernel		/* returns kernel location in %rax */
+	popq	%rsi
+
+/*
  * Jump to the decompressed kernel.
  */
 	jmp	*%rbp

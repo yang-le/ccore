@@ -94,3 +94,29 @@ void __puthex(unsigned long value)
 		__putstr(alpha);
 	}
 }
+
+extern "C" void *extract_kernel(void *rmode)
+{
+	unsigned long virt_addr = 0x1000000;
+	unsigned long needed_size;
+
+	/* Retain x86 boot parameters pointer passed from startup_32/64. */
+	boot_params = (struct boot_params *)rmode;
+
+	if (boot_params->screen_info.orig_video_mode == 7) {
+		vidmem = (char *) 0xb0000;
+		vidport = 0x3b4;
+	} else {
+		vidmem = (char *) 0xb8000;
+		vidport = 0x3d4;
+	}
+
+	lines = boot_params->screen_info.orig_video_lines;
+	cols = boot_params->screen_info.orig_video_cols;
+
+	__putstr("early console in extract_kernel\n");
+
+	for(;;);
+
+	return nullptr;
+}

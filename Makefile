@@ -3,7 +3,7 @@ CXX 			:= clang++
 LD 				:= ld
 OBJCOPY 		:= llvm-objcopy
 
-QEMU 			:= qemu-system-x86_64
+QEMU 			:= qemu-system-x86_64.exe
 
 # For gcc stack alignment is specified with -mpreferred-stack-boundary,
 # clang has the option -mstack-alignment for that purpose.
@@ -31,7 +31,6 @@ REALMODE_CFLAGS += --target=x86_64-linux-gnu -fintegrated-as
 CXXFLAGS 		:= $(REALMODE_CFLAGS) -Iinclude -D_SETUP
 CXXFLAGS 		+= -fno-asynchronous-unwind-tables
 CXXFLAGS 		+= -std=c++20
-ASFLAGS 		:= $(CXXFLAGS) -D__ASSEMBLY__
 
 # If you want to preset the SVGA mode, uncomment the next line and
 # set SVGA_MODE to whatever number you want.
@@ -39,6 +38,7 @@ ASFLAGS 		:= $(CXXFLAGS) -D__ASSEMBLY__
 # The number is the same as you would ordinarily press at bootup.
 
 SVGA_MODE	:= -DSVGA_MODE=NORMAL_VGA
+ASFLAGS 	:= $(CXXFLAGS) $(SVGA_MODE) -D__ASSEMBLY__
 
 setup-objs 	+= a20.o bioscall.o copy.o
 setup-objs 	+= header.o main.o memory.o
@@ -53,6 +53,10 @@ setup-objs	+= video-vga.o
 setup-objs	+= video-vesa.o
 setup-objs	+= video-bios.o
 
+bzImage: setup.bin vmlinux.bin tools/build
+	tools/build setup.bin vmlinux.bin $@
+	cat vmlinux.bin >> $@
+
 setup.elf: setup.ld $(setup-objs)
 	$(LD) -Map setup.map -o $@ -m elf_i386 --script $^
 
@@ -62,10 +66,6 @@ setup.bin: setup.elf
 vmlinux.bin: compressed/vmlinux
 	$(OBJCOPY) -O binary -R .note -R .comment -S $< $@
 
-bzImage: setup.bin vmlinux.bin tools/build
-	tools/build setup.bin vmlinux.bin $@
-	cat vmlinux.bin >> $@
-
 tools/build: tools/build.cc
 	$(CXX) --std=c++20 -o $@ $<
 
@@ -73,10 +73,7 @@ compressed/vmlinux:
 	$(MAKE) -C compressed vmlinux
 
 qemu: bzImage
-	$(QEMU) -nographic -kernel $<
-
-debug: bzImage
-	$(QEMU) -nographic -kernel $< -S -s
+	$(QEMU) -kernel $<
 
 clean:
 	$(MAKE) -C compressed clean

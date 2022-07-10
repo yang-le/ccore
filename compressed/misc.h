@@ -19,7 +19,7 @@ void __puthex(unsigned long value);
 #define error_puthex(__x)  __puthex(__x)
 
 /* idt_64.c */
-extern gate_desc boot_idt[BOOT_IDT_ENTRIES];
+extern struct gate_desc boot_idt[BOOT_IDT_ENTRIES];
 extern struct desc_ptr boot_idt_desc;
 
 /* IDT Entry Points */
