@@ -10,3 +10,5 @@ using s64 = signed long long;
 using u64 = unsigned long long;
 
 using size_t = decltype(sizeof(0));
+
+typedef u64 phys_addr_t;

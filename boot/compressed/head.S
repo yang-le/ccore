@@ -3,6 +3,7 @@
 #include <asm/boot.h>
 #include <asm/processor-flags.h>
 #include <asm/bootparam.h>
+#include <asm/pgtable_types.h>
 
 	.code32
     .text
@@ -344,4 +345,4 @@ SYM_DATA_LOCAL(pgtable,		.fill BOOT_INIT_PGT_SIZE, 1, 0)
  * The page table is going to be used instead of page table in the trampoline
  * memory.
  */
-SYM_DATA_LOCAL(top_pgtable,	.fill 4096, 1, 0)
+SYM_DATA_LOCAL(top_pgtable,	.fill PAGE_SIZE, 1, 0)

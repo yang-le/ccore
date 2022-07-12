@@ -18,7 +18,7 @@ CXXFLAGS		+= -ffreestanding -fshort-wchar
 CXXFLAGS		+= -fno-stack-protector
 CXXFLAGS		+= -Wno-pointer-sign
 CXXFLAGS		+= -fno-asynchronous-unwind-tables
-CXXFLAGS		+= -I../include -D__DISABLE_EXPORTS
+CXXFLAGS		+= -I../../include -D__DISABLE_EXPORTS
 CXXFLAGS 		+= -Wa,-mrelax-relocations=no
 CXXFLAGS 		+= -include linux/hidden.h
 CXXFLAGS 		+= -std=c++20

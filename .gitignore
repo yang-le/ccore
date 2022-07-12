@@ -4,6 +4,6 @@
 *.map
 *.elf
 .vscode
-tools/build
-compressed/vmlinux
+boot/tools/build
+boot/compressed/vmlinux
 bzImage

@@ -114,7 +114,9 @@ extern "C" void *extract_kernel(void *rmode)
 	lines = boot_params->screen_info.orig_video_lines;
 	cols = boot_params->screen_info.orig_video_cols;
 
-	__putstr("early console in extract_kernel\n");
+	debug_putstr("early console in extract_kernel\n");
+
+	cleanup_exception_handling();
 
 	for(;;);
 

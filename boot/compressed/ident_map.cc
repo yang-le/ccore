@@ -42,29 +42,10 @@ struct pt_regs {
 /* top of stack page */
 };
 
-/*
- * Adds the specified range to the identity mappings.
- */
-static void add_identity_map(unsigned long start, unsigned long end)
-{
-	int ret;
-
-	/* Align boundary to 2M. */
-	start = round_down(start, PMD_SIZE);
-	end = round_up(end, PMD_SIZE);
-	if (start >= end)
-		return;
-
-	/* TODO: Build the mapping. */
-	// ret = kernel_ident_mapping_init(&mapping_info, (pgd_t *)top_level_pgt, start, end);
-	// if (ret)
-		error("Error: kernel_ident_mapping_init() failed\n");
-}
-
 /* Locates and clears a region for a new top level page table. */
 extern "C" void initialize_identity_maps(void *rmode)
 {
-    __putstr("initialize_identity_maps\n");
+    // nothing to do
 }
 
 static void do_pf_error(const char *msg, unsigned long error_code,
@@ -99,10 +80,4 @@ extern "C" void do_boot_page_fault(struct pt_regs *regs, unsigned long error_cod
 	 */
 	if (error_code & (X86_PF_PROT | X86_PF_USER | X86_PF_RSVD))
 		do_pf_error("Unexpected page-fault:", error_code, address, regs->ip);
-
-	/*
-	 * Error code is sane - now identity map the 2M region around
-	 * the faulting address.
-	 */
-	add_identity_map(address, end);
 }

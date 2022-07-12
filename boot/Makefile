@@ -28,7 +28,7 @@ REALMODE_CFLAGS += -Wno-address-of-packed-member
 REALMODE_CFLAGS += $(cc_stack_align4)
 REALMODE_CFLAGS += --target=x86_64-linux-gnu -fintegrated-as
 
-CXXFLAGS 		:= $(REALMODE_CFLAGS) -Iinclude -D_SETUP
+CXXFLAGS 		:= $(REALMODE_CFLAGS) -I../include -D_SETUP
 CXXFLAGS 		+= -fno-asynchronous-unwind-tables
 CXXFLAGS 		+= -std=c++20
 
